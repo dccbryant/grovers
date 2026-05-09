@@ -48,7 +48,7 @@ DEFAULT_QUBITS = 6
 MAX_QUBITS = 14
 MIN_QUBITS = 6
 SUCCESS_THRESHOLD = 0.9
-HEATMAP_MIN_QUBITS = 11
+HEATMAP_MIN_QUBITS = 7
 PROB_RENDER_EPSILON = 1e-4
 
 # ------------------------
@@ -282,10 +282,15 @@ class AmplitudeBar(QWidget):
     def __init__(self):
         super().__init__()
         self.value = 0.0
+        self.threshold = 0.9
         self.setFixedHeight(34)
 
     def set_value(self, v: float):
         self.value = max(0.0, min(1.0, float(v)))
+        self.update()
+
+    def set_threshold(self, t: float):
+        self.threshold = max(0.0, min(1.0, float(t)))
         self.update()
 
     def paintEvent(self, _event):
@@ -305,6 +310,10 @@ class AmplitudeBar(QWidget):
             painter.setBrush(QColor(INK))
             painter.drawRect(x, rect.top(), stripe_w, rect.height())
         painter.restore()
+
+        marker_x = rect.left() + int(rect.width() * self.threshold)
+        painter.setPen(QPen(QColor(ACCENT), 2))
+        painter.drawLine(marker_x, rect.top() - 2, marker_x, rect.bottom() + 2)
 
         f = QFont(FONT_MONO)
         f.setPointSize(TYPE_MICRO)
@@ -600,7 +609,8 @@ class GroverGame(QWidget):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("Quantum Lab Series — Search Analyzer Q-52")
-        self.setMinimumSize(1280, 860)
+        self.setMinimumSize(1440, 920)
+        self.resize(1680, 1000)
 
         self.session_id = f"{random.randint(0, 9999):04d}"
         self.session_started = datetime.now()
@@ -623,6 +633,7 @@ class GroverGame(QWidget):
         self.last_probs = {}
         self.last_classical_index = None
 
+        self.success_threshold = SUCCESS_THRESHOLD
         self.quantum_batch = 1
         self.auto_classical = False
         self.auto_batch = 1
@@ -731,8 +742,11 @@ class GroverGame(QWidget):
         c_eye = QLabel("GROVER'S ALGORITHM — DEMONSTRATION")
         c_eye.setObjectName("HeaderEyebrow")
         c_eye.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.header_title = QLabel("Searching Queen of Hearts in 52 cards")
+        self.header_title = QLabel(
+            f'Searching <span style="color:{ACCENT}">Queen of Hearts</span> in 52 cards'
+        )
         self.header_title.setObjectName("HeaderTitle")
+        self.header_title.setTextFormat(Qt.TextFormat.RichText)
         self.header_title.setAlignment(Qt.AlignmentFlag.AlignCenter)
         center.addWidget(c_eye)
         center.addWidget(self.header_title)
@@ -793,59 +807,61 @@ class GroverGame(QWidget):
         v = QVBoxLayout(panel)
         v.setContentsMargins(16, 14, 16, 14)
         v.setSpacing(8)
-        header = SectionHeader("Configuration", "N = 2ⁿ")
-        v.addWidget(header)
+        v.addWidget(SectionHeader("Configuration", "N = 2ⁿ"))
 
         row = QHBoxLayout()
         row.setSpacing(16)
 
-        dial_col = QVBoxLayout()
-        dial_col.setSpacing(2)
+        left_col = QVBoxLayout()
+        left_col.setSpacing(6)
         self.qubit_dial = QubitDial(MIN_QUBITS, MAX_QUBITS)
         self.qubit_dial.setValue(self.num_qubits)
         self.qubit_dial.valueChanged.connect(self._on_qubit_dial)
-        dial_col.addWidget(self.qubit_dial, alignment=Qt.AlignmentFlag.AlignCenter)
-        dial_col_wrap = QWidget()
-        dial_col_wrap.setLayout(dial_col)
+        left_col.addWidget(self.qubit_dial, alignment=Qt.AlignmentFlag.AlignCenter)
 
-        right = QVBoxLayout()
-        right.setSpacing(4)
-        right.addStretch(1)
-        self.iteration_counter = FlipCounter()
-        right.addWidget(self.iteration_counter, alignment=Qt.AlignmentFlag.AlignRight)
-        self.iter_caption = QLabel("/ 06 OPT")
-        self.iter_caption.setObjectName("MutedMono")
-        self.iter_caption.setAlignment(Qt.AlignmentFlag.AlignRight)
-        right.addWidget(self.iter_caption)
-        right.addStretch(2)
-        right_wrap = QWidget()
-        right_wrap.setLayout(right)
-
-        row.addWidget(dial_col_wrap)
-        row.addStretch(1)
-        row.addWidget(right_wrap)
-        v.addLayout(row)
-
-        bottom = QHBoxLayout()
-        bottom.setContentsMargins(0, 4, 0, 0)
+        qubits_row = QHBoxLayout()
+        qubits_row.setSpacing(6)
         self.qubits_value = QLabel("6")
         self.qubits_value.setStyleSheet(
-            f"color: {INK}; font-family: '{FONT_MONO}'; font-size: 24px; font-weight: 600;"
+            f"color: {INK}; font-family: '{FONT_MONO}'; font-size: 28px; font-weight: 600;"
         )
         qubits_label = QLabel("QUBITS")
         qubits_label.setObjectName("MutedMono")
-        qubits_label.setAlignment(Qt.AlignmentFlag.AlignBottom)
-        bottom.addWidget(self.qubits_value)
-        bottom.addWidget(qubits_label, alignment=Qt.AlignmentFlag.AlignBottom)
-        bottom.addStretch(1)
+        qubits_row.addWidget(self.qubits_value)
+        qubits_row.addWidget(qubits_label, alignment=Qt.AlignmentFlag.AlignBottom)
+        qubits_row.addStretch(1)
+        left_col.addLayout(qubits_row)
+
         register_label = QLabel("REGISTER WIDTH")
         register_label.setObjectName("MutedMono")
+        left_col.addWidget(register_label)
+        left_col.addStretch(1)
+
+        left_wrap = QWidget()
+        left_wrap.setLayout(left_col)
+
+        right_col = QVBoxLayout()
+        right_col.setSpacing(6)
+        right_col.addStretch(1)
+        self.iteration_counter = FlipCounter()
+        right_col.addWidget(self.iteration_counter, alignment=Qt.AlignmentFlag.AlignRight)
+        self.iter_caption = QLabel("/ 06 OPT")
+        self.iter_caption.setObjectName("MutedMono")
+        self.iter_caption.setAlignment(Qt.AlignmentFlag.AlignRight)
+        right_col.addWidget(self.iter_caption)
+        right_col.addStretch(1)
         iter_label = QLabel("ITERATION")
         iter_label.setObjectName("MutedMono")
-        bottom.addWidget(register_label, alignment=Qt.AlignmentFlag.AlignBottom)
-        bottom.addSpacing(40)
-        bottom.addWidget(iter_label, alignment=Qt.AlignmentFlag.AlignBottom)
-        v.addLayout(bottom)
+        iter_label.setAlignment(Qt.AlignmentFlag.AlignRight)
+        right_col.addWidget(iter_label)
+
+        right_wrap = QWidget()
+        right_wrap.setLayout(right_col)
+
+        row.addWidget(left_wrap)
+        row.addStretch(1)
+        row.addWidget(right_wrap)
+        v.addLayout(row)
         return panel
 
     def _build_speed_panel(self) -> PanelFrame:
@@ -913,8 +929,32 @@ class GroverGame(QWidget):
         header_row.addWidget(self.amplitude_value)
         v.addLayout(header_row)
         self.amp_bar = AmplitudeBar()
+        self.amp_bar.set_threshold(self.success_threshold)
         v.addWidget(self.amp_bar)
+
+        threshold_row = QHBoxLayout()
+        threshold_row.setSpacing(8)
+        threshold_label = QLabel("STOP AT")
+        threshold_label.setObjectName("MutedMono")
+        self.threshold_slider = QSlider(Qt.Orientation.Horizontal)
+        self.threshold_slider.setMinimum(50)
+        self.threshold_slider.setMaximum(99)
+        self.threshold_slider.setValue(int(round(self.success_threshold * 100)))
+        self.threshold_slider.valueChanged.connect(self._on_threshold_changed)
+        self.threshold_value = QLabel(f"{int(round(self.success_threshold * 100))}%")
+        self.threshold_value.setObjectName("InkMono")
+        self.threshold_value.setFixedWidth(36)
+        self.threshold_value.setAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
+        threshold_row.addWidget(threshold_label)
+        threshold_row.addWidget(self.threshold_slider, stretch=1)
+        threshold_row.addWidget(self.threshold_value)
+        v.addLayout(threshold_row)
         return panel
+
+    def _on_threshold_changed(self, value: int):
+        self.success_threshold = value / 100.0
+        self.threshold_value.setText(f"{value}%")
+        self.amp_bar.set_threshold(self.success_threshold)
 
     def _build_main(self) -> QWidget:
         main = QFrame()
@@ -1060,20 +1100,24 @@ class GroverGame(QWidget):
             random.shuffle(self.deck)
             self.queen_index = self.deck.index(QUEEN_CARD)
             self.queen_bin = format(self.queen_index, f"0{self.num_qubits}b")
-            self.header_title.setText("Searching Queen of Hearts in 52 cards")
+            self.header_title.setText(
+                f'Searching <span style="color:{ACCENT}">Queen of Hearts</span> in 52 cards'
+            )
             self.marked_card.setText("Q♥")
             self.marked_text.setText(f"— position {self.queen_index + 1} of 52")
         else:
             self.deck = None
             self.queen_index = random.randrange(self.n_items)
             self.queen_bin = format(self.queen_index, f"0{self.num_qubits}b")
-            self.header_title.setText(f"Searching target state in {self.n_items} cards")
+            self.header_title.setText(
+                f'Searching <span style="color:{ACCENT}">target state</span> in {self.n_items} cards'
+            )
             self.marked_card.setText(f"|{self.queen_bin}⟩")
             self.marked_text.setText(f"— position {self.queen_index + 1} of {self.n_items}")
 
         self.oracle = custom_oracle(self.num_qubits, self.queen_bin)
         self.diff = diffuser(self.num_qubits)
-        self.quantum_batch = 5 if self.num_qubits >= HEATMAP_MIN_QUBITS + 1 else 1
+        self.quantum_batch = 5 if self.num_qubits >= 12 else 1
 
         opt = optimal_iterations(self.n_items)
         self.iter_caption.setText(f"/ {opt:02d} OPT")
@@ -1249,33 +1293,52 @@ class GroverGame(QWidget):
         if not self.auto_classical:
             self.auto_timer.stop()
             return
+
+        last_probs = self.last_probs
+        last_classical_index = self.last_classical_index
+
         for _ in range(self.auto_batch):
-            classical_index = self._classical_guess()
-            if classical_index is None:
-                self.auto_classical = False
-                self.auto_timer.stop()
-                self.next_button.setDisabled(False)
-                self.auto_button.caption = "Auto"
-                self.auto_button.update()
-                break
-            self.classical_attempts += 1
-            classical_found = classical_index == self.queen_index
-            self._apply_probs_to_view(self.last_probs, classical_index)
-            if classical_found:
-                self.classical_done = True
-                self.auto_classical = False
-                self.auto_timer.stop()
-                self.auto_button.caption = "Auto"
-                self.auto_button.update()
-                if self.quantum_steps is not None:
-                    self.message.setText(
-                        f"Quantum found in {self.quantum_steps} iterations. "
-                        f"Classical needed {self.classical_attempts} checks to catch up."
-                    )
+            progressed = False
+
+            if not self.grover_done:
+                self.grover_iterations += 1
+                last_probs = self._run_grover_exact(self.grover_iterations)
+                if last_probs.get(self.queen_index, 0.0) > self.success_threshold:
+                    self.grover_done = True
+                    self.quantum_steps = self.grover_iterations
+                progressed = True
+
+            if not self.classical_done:
+                ci = self._classical_guess()
+                if ci is None:
+                    self.classical_done = True
                 else:
-                    self.message.setText("Classical algorithm found the target.")
-                self.next_button.setDisabled(False)
+                    last_classical_index = ci
+                    self.classical_attempts += 1
+                    if ci == self.queen_index:
+                        self.classical_done = True
+                    progressed = True
+
+            if not progressed or (self.grover_done and self.classical_done):
                 break
+
+        self._apply_probs_to_view(last_probs, last_classical_index)
+
+        if self.grover_done and self.classical_done:
+            self.auto_classical = False
+            self.auto_timer.stop()
+            self.next_button.setDisabled(False)
+            self.auto_button.caption = "Auto"
+            self.auto_button.update()
+            quantum_part = (
+                f"Quantum: {self.quantum_steps} iterations."
+                if self.quantum_steps is not None
+                else "Quantum: not found."
+            )
+            self.message.setText(
+                f"Both engines finished. {quantum_part} "
+                f"Classical: {self.classical_attempts} checks."
+            )
 
     def _run_grover_exact(self, iterations: int):
         n = self.num_qubits
@@ -1303,7 +1366,7 @@ class GroverGame(QWidget):
             for _ in range(self.quantum_batch):
                 self.grover_iterations += 1
                 final_probs = self._run_grover_exact(self.grover_iterations)
-                if final_probs.get(self.queen_index, 0.0) > SUCCESS_THRESHOLD:
+                if final_probs.get(self.queen_index, 0.0) > self.success_threshold:
                     self.grover_done = True
                     self.quantum_steps = self.grover_iterations
                     break
