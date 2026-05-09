@@ -282,10 +282,15 @@ class AmplitudeBar(QWidget):
     def __init__(self):
         super().__init__()
         self.value = 0.0
+        self.threshold = 0.9
         self.setFixedHeight(34)
 
     def set_value(self, v: float):
         self.value = max(0.0, min(1.0, float(v)))
+        self.update()
+
+    def set_threshold(self, t: float):
+        self.threshold = max(0.0, min(1.0, float(t)))
         self.update()
 
     def paintEvent(self, _event):
@@ -305,6 +310,10 @@ class AmplitudeBar(QWidget):
             painter.setBrush(QColor(INK))
             painter.drawRect(x, rect.top(), stripe_w, rect.height())
         painter.restore()
+
+        marker_x = rect.left() + int(rect.width() * self.threshold)
+        painter.setPen(QPen(QColor(ACCENT), 2))
+        painter.drawLine(marker_x, rect.top() - 2, marker_x, rect.bottom() + 2)
 
         f = QFont(FONT_MONO)
         f.setPointSize(TYPE_MICRO)
@@ -623,6 +632,7 @@ class GroverGame(QWidget):
         self.last_probs = {}
         self.last_classical_index = None
 
+        self.success_threshold = SUCCESS_THRESHOLD
         self.quantum_batch = 1
         self.auto_classical = False
         self.auto_batch = 1
@@ -913,8 +923,32 @@ class GroverGame(QWidget):
         header_row.addWidget(self.amplitude_value)
         v.addLayout(header_row)
         self.amp_bar = AmplitudeBar()
+        self.amp_bar.set_threshold(self.success_threshold)
         v.addWidget(self.amp_bar)
+
+        threshold_row = QHBoxLayout()
+        threshold_row.setSpacing(8)
+        threshold_label = QLabel("STOP AT")
+        threshold_label.setObjectName("MutedMono")
+        self.threshold_slider = QSlider(Qt.Orientation.Horizontal)
+        self.threshold_slider.setMinimum(50)
+        self.threshold_slider.setMaximum(99)
+        self.threshold_slider.setValue(int(round(self.success_threshold * 100)))
+        self.threshold_slider.valueChanged.connect(self._on_threshold_changed)
+        self.threshold_value = QLabel(f"{int(round(self.success_threshold * 100))}%")
+        self.threshold_value.setObjectName("InkMono")
+        self.threshold_value.setFixedWidth(36)
+        self.threshold_value.setAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
+        threshold_row.addWidget(threshold_label)
+        threshold_row.addWidget(self.threshold_slider, stretch=1)
+        threshold_row.addWidget(self.threshold_value)
+        v.addLayout(threshold_row)
         return panel
+
+    def _on_threshold_changed(self, value: int):
+        self.success_threshold = value / 100.0
+        self.threshold_value.setText(f"{value}%")
+        self.amp_bar.set_threshold(self.success_threshold)
 
     def _build_main(self) -> QWidget:
         main = QFrame()
@@ -1303,7 +1337,7 @@ class GroverGame(QWidget):
             for _ in range(self.quantum_batch):
                 self.grover_iterations += 1
                 final_probs = self._run_grover_exact(self.grover_iterations)
-                if final_probs.get(self.queen_index, 0.0) > SUCCESS_THRESHOLD:
+                if final_probs.get(self.queen_index, 0.0) > self.success_threshold:
                     self.grover_done = True
                     self.quantum_steps = self.grover_iterations
                     break
