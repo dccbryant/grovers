@@ -656,15 +656,18 @@ class GroverGame(QWidget):
     def _apply_theme(self):
         self.setStyleSheet(
             f"""
+            GroverGame {{ background: {BG}; }}
             QWidget {{
-                background: {BG};
                 color: {INK};
                 font-family: "{FONT_SANS}";
                 font-size: {TYPE_BODY}px;
             }}
+            QLabel {{ background: transparent; }}
+            QFrame {{ background: transparent; }}
             QFrame#HeaderBar {{ background: {PANEL}; border-bottom: 1px solid {PANEL_EDGE}; }}
             QFrame#FooterBar {{ background: {PANEL}; border-top: 1px solid {PANEL_EDGE}; }}
             QFrame#Sidebar {{ background: {BG}; border-right: 1px solid {PANEL_EDGE}; }}
+            QFrame#MainFrame {{ background: {BG}; }}
             QFrame#Panel {{ background: {PANEL}; border: 1px solid {PANEL_EDGE}; }}
             QFrame#EngineCard {{ background: {PANEL_DARK}; border: 1px solid {PANEL_EDGE}; }}
             QFrame#EngineBar {{ background: {INK}; border: none; }}
@@ -716,7 +719,7 @@ class GroverGame(QWidget):
     def _build_header(self) -> QFrame:
         bar = QFrame()
         bar.setObjectName("HeaderBar")
-        bar.setFixedHeight(86)
+        bar.setFixedHeight(96)
         layout = QHBoxLayout(bar)
         layout.setContentsMargins(28, 14, 28, 14)
         layout.setSpacing(28)
@@ -958,6 +961,7 @@ class GroverGame(QWidget):
 
     def _build_main(self) -> QWidget:
         main = QFrame()
+        main.setObjectName("MainFrame")
         layout = QVBoxLayout(main)
         layout.setContentsMargins(28, 22, 28, 16)
         layout.setSpacing(14)
