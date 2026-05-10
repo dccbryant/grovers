@@ -259,7 +259,7 @@ class QubitDial(QDial):
         ticks = self.maximum() - self.minimum() + 1
         painter.setPen(QPen(QColor(INK_SOFT), 1))
         for i in range(ticks):
-            theta = math.radians(225 - (270 * i / max(1, ticks - 1)))
+            theta = math.radians(240 - (300 * i / max(1, ticks - 1)))
             x1 = cx + (r_outer - 2) * math.cos(theta)
             y1 = cy - (r_outer - 2) * math.sin(theta)
             x2 = cx + (r_outer + 6) * math.cos(theta)
