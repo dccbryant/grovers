@@ -1122,6 +1122,8 @@ class GroverGame(QWidget):
         self.oracle = custom_oracle(self.num_qubits, self.queen_bin)
         self.diff = diffuser(self.num_qubits)
         self.quantum_batch = 5 if self.num_qubits >= 12 else 1
+        self._sv = None
+        self._sv_iters = 0
 
         opt = optimal_iterations(self.n_items)
         self.iter_caption.setText(f"/ {opt:02d} OPT")
@@ -1346,13 +1348,15 @@ class GroverGame(QWidget):
 
     def _run_grover_exact(self, iterations: int):
         n = self.num_qubits
-        qc = QuantumCircuit(n)
-        qc.h(range(n))
-        for _ in range(iterations):
-            qc.compose(self.oracle, inplace=True)
-            qc.compose(self.diff, inplace=True)
-        sv = Statevector.from_instruction(qc)
-        probs = sv.probabilities()
+        if self._sv is None or iterations < self._sv_iters:
+            init = QuantumCircuit(n)
+            init.h(range(n))
+            self._sv = Statevector.from_instruction(init)
+            self._sv_iters = 0
+        while self._sv_iters < iterations:
+            self._sv = self._sv.evolve(self.oracle).evolve(self.diff)
+            self._sv_iters += 1
+        probs = self._sv.probabilities()
         return {i: float(p) for i, p in enumerate(probs) if p > PROB_RENDER_EPSILON}
 
     def _next_turn(self):
