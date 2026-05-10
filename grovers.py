@@ -151,6 +151,7 @@ class EngineCard(QFrame):
     def __init__(self, name: str, subtitle: str, code: str):
         super().__init__()
         self.setObjectName("EngineCard")
+        self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
         layout = QVBoxLayout(self)
         layout.setContentsMargins(12, 10, 12, 10)
         layout.setSpacing(4)
@@ -608,6 +609,8 @@ class LegendSwatch(QWidget):
 class GroverGame(QWidget):
     def __init__(self):
         super().__init__()
+        self.setObjectName("GroverGame")
+        self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
         self.setWindowTitle("Quantum Lab Series — Search Analyzer Q-52")
         self.setMinimumSize(1440, 920)
         self.resize(1680, 1000)
@@ -656,7 +659,7 @@ class GroverGame(QWidget):
     def _apply_theme(self):
         self.setStyleSheet(
             f"""
-            GroverGame {{ background: {BG}; }}
+            QWidget#GroverGame {{ background: {BG}; }}
             QWidget {{
                 color: {INK};
                 font-family: "{FONT_SANS}";
@@ -719,19 +722,24 @@ class GroverGame(QWidget):
     def _build_header(self) -> QFrame:
         bar = QFrame()
         bar.setObjectName("HeaderBar")
-        bar.setFixedHeight(96)
+        bar.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
+        bar.setFixedHeight(110)
         layout = QHBoxLayout(bar)
-        layout.setContentsMargins(28, 14, 28, 14)
+        layout.setContentsMargins(28, 18, 28, 18)
         layout.setSpacing(28)
 
         left = QVBoxLayout()
-        left.setSpacing(2)
+        left.setContentsMargins(0, 0, 0, 0)
+        left.setSpacing(4)
+        left.addStretch(1)
         eyebrow = QLabel("QUANTUM LAB SERIES")
         eyebrow.setObjectName("HeaderEyebrow")
         ident = QLabel("Search Analyzer · Model Q-52")
         ident.setObjectName("HeaderTitle")
+        ident.setMinimumHeight(34)
         left.addWidget(eyebrow)
         left.addWidget(ident)
+        left.addStretch(1)
         left_wrap = QWidget()
         left_wrap.setLayout(left)
         left_wrap.setFixedWidth(360)
@@ -741,7 +749,9 @@ class GroverGame(QWidget):
         div.setStyleSheet(f"color: {PANEL_EDGE};")
 
         center = QVBoxLayout()
-        center.setSpacing(2)
+        center.setContentsMargins(0, 0, 0, 0)
+        center.setSpacing(4)
+        center.addStretch(1)
         c_eye = QLabel("GROVER'S ALGORITHM — DEMONSTRATION")
         c_eye.setObjectName("HeaderEyebrow")
         c_eye.setAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -751,8 +761,10 @@ class GroverGame(QWidget):
         self.header_title.setObjectName("HeaderTitle")
         self.header_title.setTextFormat(Qt.TextFormat.RichText)
         self.header_title.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.header_title.setMinimumHeight(34)
         center.addWidget(c_eye)
         center.addWidget(self.header_title)
+        center.addStretch(1)
         center_wrap = QWidget()
         center_wrap.setLayout(center)
 
@@ -779,6 +791,7 @@ class GroverGame(QWidget):
     def _build_sidebar(self) -> QFrame:
         side = QFrame()
         side.setObjectName("Sidebar")
+        side.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
         side.setFixedWidth(360)
         layout = QVBoxLayout(side)
         layout.setContentsMargins(20, 20, 20, 20)
@@ -1042,6 +1055,7 @@ class GroverGame(QWidget):
     def _build_footer(self) -> QFrame:
         bar = QFrame()
         bar.setObjectName("FooterBar")
+        bar.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
         bar.setFixedHeight(36)
         layout = QHBoxLayout(bar)
         layout.setContentsMargins(28, 0, 28, 0)
