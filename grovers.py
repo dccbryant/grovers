@@ -496,7 +496,7 @@ class HeatmapCanvas(QWidget):
         self.cols = 1
         self.rows = 1
         self.spacing = 1
-        self.probs = {}
+        self.probs = None
         self.classical_idx = None
         self.target_idx = None
         self.quantum_success = False
@@ -509,7 +509,7 @@ class HeatmapCanvas(QWidget):
         self.update()
 
     def set_data(self, probs, classical_idx, target_idx, quantum_success=False, visited=0):
-        self.probs = probs or {}
+        self.probs = probs
         self.classical_idx = classical_idx
         self.target_idx = target_idx
         self.quantum_success = quantum_success
@@ -534,6 +534,8 @@ class HeatmapCanvas(QWidget):
 
         viewport = self.rect()
         total = self.cols * self.rows
+        probs = self.probs
+        n_probs = len(probs) if probs is not None else 0
         for idx in range(total):
             r = idx // self.cols
             c = idx % self.cols
@@ -541,10 +543,11 @@ class HeatmapCanvas(QWidget):
             painter.fillRect(rect, QColor(PANEL_DARK))
             if self.classical_idx is not None and idx < self.classical_visited_count:
                 painter.fillRect(rect, QColor(225, 219, 209))
-            p = self.probs.get(idx, 0.0)
-            if p > 0:
-                alpha = max(20, min(int(p * 255 * 3.5), 220))
-                painter.fillRect(rect, QColor(31, 31, 31, alpha))
+            if idx < n_probs:
+                score = float(probs[idx]) * n_probs
+                alpha = max(0, min(220, int(score * 60)))
+                if alpha > 0:
+                    painter.fillRect(rect, QColor(31, 31, 31, alpha))
 
         if self.classical_idx is not None:
             r = self.classical_idx // self.cols
@@ -630,7 +633,7 @@ class GroverGame(QWidget):
         self.grover_done = False
         self.reveal_mode = False
         self.quantum_steps = None
-        self.last_probs = {}
+        self.last_probs = None
         self.last_classical_index = None
 
         self.success_threshold = SUCCESS_THRESHOLD
@@ -1096,7 +1099,7 @@ class GroverGame(QWidget):
         self.grover_done = False
         self.quantum_steps = None
         self.reveal_mode = False
-        self.last_probs = {}
+        self.last_probs = None
         self.last_classical_index = None
 
         if self.num_qubits == 6:
@@ -1178,6 +1181,8 @@ class GroverGame(QWidget):
             self._cols, self._rows = cols, rows
             self.heatmap.set_geometry(cols, rows, spacing=1)
             self.cards = []
+            initial_probs = self._run_grover_exact(0)
+            self._apply_probs_to_view(initial_probs, None)
 
     def _relayout_if_needed(self):
         if self.num_qubits < HEATMAP_MIN_QUBITS:
@@ -1236,11 +1241,15 @@ class GroverGame(QWidget):
         return idx
 
     def _apply_probs_to_view(self, probs, classical_index):
-        self.last_probs = probs or {}
+        self.last_probs = probs
         self.last_classical_index = classical_index
         if self.num_qubits < HEATMAP_MIN_QUBITS:
             for card in self.cards:
-                card.probability = probs.get(card.index, 0.0) if probs else 0.0
+                if probs is not None and card.index < len(probs):
+                    p = float(probs[card.index])
+                    card.probability = p if p > PROB_RENDER_EPSILON else 0.0
+                else:
+                    card.probability = 0.0
                 card.classical_current = (card.index == classical_index)
                 card.classical_visited = (card.index < self.classical_counter)
                 card.revealed = (
@@ -1255,7 +1264,7 @@ class GroverGame(QWidget):
                 quantum_success=self.grover_done,
                 visited=self.classical_counter,
             )
-        target_p = (probs or {}).get(self.queen_index, 0.0)
+        target_p = float(probs[self.queen_index]) if probs is not None else 0.0
         self.amp_bar.set_value(target_p)
         self.amplitude_value.setText(f"{int(round(target_p * 100))}%")
         self._update_status()
@@ -1309,7 +1318,7 @@ class GroverGame(QWidget):
             if not self.grover_done:
                 self.grover_iterations += 1
                 last_probs = self._run_grover_exact(self.grover_iterations)
-                if last_probs.get(self.queen_index, 0.0) > self.success_threshold:
+                if float(last_probs[self.queen_index]) > self.success_threshold:
                     self.grover_done = True
                     self.quantum_steps = self.grover_iterations
                 progressed = True
@@ -1356,8 +1365,7 @@ class GroverGame(QWidget):
         while self._sv_iters < iterations:
             self._sv = self._sv.evolve(self.oracle).evolve(self.diff)
             self._sv_iters += 1
-        probs = self._sv.probabilities()
-        return {i: float(p) for i, p in enumerate(probs) if p > PROB_RENDER_EPSILON}
+        return self._sv.probabilities()
 
     def _next_turn(self):
         if self.auto_classical:
@@ -1374,7 +1382,7 @@ class GroverGame(QWidget):
             for _ in range(self.quantum_batch):
                 self.grover_iterations += 1
                 final_probs = self._run_grover_exact(self.grover_iterations)
-                if final_probs.get(self.queen_index, 0.0) > self.success_threshold:
+                if float(final_probs[self.queen_index]) > self.success_threshold:
                     self.grover_done = True
                     self.quantum_steps = self.grover_iterations
                     break
