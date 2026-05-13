@@ -835,11 +835,11 @@ class GroverGame(QWidget):
         qubits_row.setSpacing(6)
         self.qubits_value = QLabel("6")
         self.qubits_value.setStyleSheet(
-            f"color: {INK}; font-family: '{FONT_MONO}'; font-size: 28px; font-weight: 600;"
+            f"color: {INK}; font-family: '{FONT_MONO}'; font-size: 22px; font-weight: 600;"
         )
         qubits_label = QLabel("QUBITS")
         qubits_label.setObjectName("MutedMono")
-        qubits_row.addWidget(self.qubits_value)
+        qubits_row.addWidget(self.qubits_value, alignment=Qt.AlignmentFlag.AlignBottom)
         qubits_row.addWidget(qubits_label, alignment=Qt.AlignmentFlag.AlignBottom)
         qubits_row.addStretch(1)
         left_col.addLayout(qubits_row)
