@@ -270,10 +270,12 @@ class QubitDial(QDial):
         f.setPointSize(TYPE_MICRO)
         painter.setFont(f)
         painter.setPen(QColor(MUTED))
-        painter.drawText(QRectF(0, rect.height() - 18, rect.width() / 2, 14),
-                         Qt.AlignmentFlag.AlignCenter, str(self.minimum()))
-        painter.drawText(QRectF(rect.width() / 2, rect.height() - 18, rect.width() / 2, 14),
-                         Qt.AlignmentFlag.AlignCenter, str(self.maximum()))
+        painter.drawText(QRectF(2, rect.height() - 13, 22, 12),
+                         Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter,
+                         str(self.minimum()))
+        painter.drawText(QRectF(rect.width() - 24, rect.height() - 13, 22, 12),
+                         Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter,
+                         str(self.maximum()))
 
 
 class AmplitudeBar(QWidget):
