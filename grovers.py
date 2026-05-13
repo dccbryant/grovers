@@ -52,20 +52,20 @@ HEATMAP_MIN_QUBITS = 7
 PROB_RENDER_EPSILON = 1e-4
 
 # ------------------------
-# Braun-inspired palette
+# IBM Carbon Design System palette (light theme tokens)
 # ------------------------
-BG = "#f4f1ea"
-PANEL = "#ece6dc"
-PANEL_DARK = "#e1dbd1"
-PANEL_EDGE = "#c8c1b6"
-INK = "#1f1f1f"
-INK_SOFT = "#3a3a38"
-MUTED = "#8a857c"
-HAIRLINE = "#cdc6bb"
-ACCENT = "#bf3c30"
-ACCENT_SOFT = "#d4a792"
-CLASSICAL = "#2f7d52"
-PROBE = "#1f1f1f"
+BG = "#f4f4f4"          # ui-background
+PANEL = "#ffffff"       # layer-01 (cards on gray bg)
+PANEL_DARK = "#e8e8e8"  # layer-02
+PANEL_EDGE = "#e0e0e0"  # border-subtle-01
+INK = "#161616"         # text-primary
+INK_SOFT = "#393939"    # gray-90
+MUTED = "#6f6f6f"       # text-helper
+HAIRLINE = "#e0e0e0"
+ACCENT = "#0f62fe"      # interactive-01 (Blue 60)
+ACCENT_SOFT = "#d0e2ff" # Blue 20
+CLASSICAL = "#24a148"   # support-success
+PROBE = "#161616"
 
 FONT_SANS = "IBM Plex Sans"
 FONT_MONO = "IBM Plex Mono"
@@ -352,13 +352,13 @@ class TransportButton(QPushButton):
         rect = self.rect()
         body = QRect(rect.left(), rect.top(), rect.width(), rect.height() - 16)
 
-        bg = QColor(BG)
+        bg = QColor(PANEL)
         fg = QColor(INK)
         if self.variant == "primary":
-            bg = QColor(INK)
-            fg = QColor(BG)
+            bg = QColor(ACCENT)
+            fg = QColor("#ffffff")
         elif self.variant == "reveal":
-            bg = QColor(BG)
+            bg = QColor(PANEL)
             fg = QColor(INK)
 
         if self.isDown():
