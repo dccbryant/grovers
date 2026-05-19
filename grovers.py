@@ -503,14 +503,11 @@ class HeatmapCanvas(QWidget):
         self.target_idx = None
         self.quantum_success = False
         self.classical_visited_count = 0
-        self.cell_jitter = []
 
     def set_geometry(self, cols, rows, spacing=1):
         self.cols = max(1, cols)
         self.rows = max(1, rows)
         self.spacing = max(0, spacing)
-        total = self.cols * self.rows
-        self.cell_jitter = [0.35 + random.random() * 1.05 for _ in range(total)]
         self.update()
 
     def set_data(self, probs, classical_idx, target_idx, quantum_success=False, visited=0):
@@ -549,8 +546,7 @@ class HeatmapCanvas(QWidget):
             if self.classical_idx is not None and idx < self.classical_visited_count:
                 painter.fillRect(rect, QColor(225, 219, 209))
             if idx < n_probs:
-                jitter = self.cell_jitter[idx] if idx < len(self.cell_jitter) else 1.0
-                score = float(probs[idx]) * n_probs * jitter
+                score = float(probs[idx]) * n_probs
                 alpha = max(0, min(220, int(score * 60)))
                 if alpha > 0:
                     painter.fillRect(rect, QColor(31, 31, 31, alpha))
