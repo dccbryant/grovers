@@ -431,7 +431,10 @@ class CardCell(QLabel):
             painter.drawRect(rect)
 
         if self.probability > 0:
-            stripe_h = max(2, int(min(1.0, self.probability * 3.5) * (rect.height() * 0.18)))
+            if self.is_target:
+                stripe_h = max(2, int(self.probability * (rect.height() * 0.18)))
+            else:
+                stripe_h = max(2, int(min(1.0, self.probability * 3.5) * (rect.height() * 0.18)))
             painter.setBrush(QColor(INK))
             painter.drawRect(rect.left() + 6, rect.bottom() - stripe_h - 4,
                              rect.width() - 12, stripe_h)
@@ -546,8 +549,11 @@ class HeatmapCanvas(QWidget):
             if self.classical_idx is not None and idx < self.classical_visited_count:
                 painter.fillRect(rect, QColor(225, 219, 209))
             if idx < n_probs:
-                score = float(probs[idx]) * n_probs
-                alpha = max(0, min(220, int(score * 60)))
+                if idx == self.target_idx:
+                    alpha = max(0, min(220, int(60 + float(probs[idx]) * 160)))
+                else:
+                    score = float(probs[idx]) * n_probs
+                    alpha = max(0, min(220, int(score * 60)))
                 if alpha > 0:
                     painter.fillRect(rect, QColor(31, 31, 31, alpha))
 
